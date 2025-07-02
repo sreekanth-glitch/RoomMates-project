@@ -1,12 +1,14 @@
-import Login from "@/components/Login"
-
+import { Suspense } from "react";
+import Login from "@/components/Login";
 
 const page = () => {
   return (
     <div>
-      <Login/>
+      <Suspense fallback={<p className="text-center mt-5">Loading login...</p>}>
+        <Login />
+      </Suspense>
     </div>
-  )
-}
+  );
+};
 
-export default page
+export default page;

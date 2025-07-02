@@ -3,6 +3,7 @@
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
+
 const RoomList = () => {
   const [rooms, setRooms] = useState([]);
   const searchParams = useSearchParams();

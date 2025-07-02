@@ -2,6 +2,7 @@
 import "./globals.css";
 import NavBar from "@/components/NavBar";
 import Footer from "@/components/Footer";
+import { Suspense } from "react";
 
 export const metadata = {
   title: "Roommates",
@@ -19,9 +20,16 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body>
-        <NavBar />
+        <Suspense fallback={<div>Loading Navbar...</div>}>
+          <NavBar />
+        </Suspense>
+
+        {/* Children usually won't need suspense here unless they use useSearchParams() at top level */}
         {children}
-        <Footer />
+
+        <Suspense fallback={<div>Loading Footer...</div>}>
+          <Footer />
+        </Suspense>
       </body>
     </html>
   );

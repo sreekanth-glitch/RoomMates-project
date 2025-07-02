@@ -1,12 +1,14 @@
-import RoomList from "@/components/RoomList"
-
+import RoomList from "@/components/RoomList";
+import { Suspense } from "react";
 
 const City = () => {
   return (
-      <div>
-        <RoomList/>
+    <div>
+      <Suspense fallback={<p className="text-center mt-5">Loading rooms...</p>}>
+        <RoomList />
+      </Suspense>
     </div>
-  )
-}
+  );
+};
 
-export default City
+export default City;
