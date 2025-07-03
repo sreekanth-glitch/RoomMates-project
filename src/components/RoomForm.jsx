@@ -82,7 +82,7 @@ const RoomForm = () => {
         formData.append('description', form.description);
         formData.append('image', form.image);
   
-        const res = await fetch('https://room-mates-project.vercel.app/api/room', {
+        const res = await fetch('https://room-mates-brown.vercel.app/api/room', {
           method: 'POST',
           headers: {
             token: token, // Corrected header

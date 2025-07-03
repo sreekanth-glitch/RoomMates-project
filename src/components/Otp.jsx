@@ -31,7 +31,7 @@ const Otp = () => {
     e.preventDefault();
 
     try {
-      const res = await fetch('https://room-mates-project.vercel.app/api/verifyotp', {
+      const res = await fetch('https://room-mates-brown.vercel.app/api/verifyotp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, otp }),
@@ -61,7 +61,7 @@ const Otp = () => {
     setResendCount(prev => prev + 1);
 
     try {
-      const res = await fetch('http://localhost:3000/api/resendotp', {
+      const res = await fetch('https://room-mates-brown.vercel.app/api/resendotp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),

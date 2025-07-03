@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 
-const API_URL = 'https://room-mates-project.vercel.app';
+const API_URL = 'https://room-mates-brown.vercel.app';
 
 const FetchRooms = () => {
   const [rooms, setRooms] = useState([]);

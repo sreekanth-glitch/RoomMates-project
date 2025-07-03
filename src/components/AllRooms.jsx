@@ -8,7 +8,7 @@ const AllRoom = () => {
   useEffect(() => {
     const fetchRooms = async () => {
       try {
-        const res = await fetch('https://room-mates-project.vercel.app/api/getallrooms');
+        const res = await fetch('https://room-mates-brown.vercel.app/api/getallrooms');
         const data = await res.json();
         setRooms(data);
       } catch (error) {

@@ -11,7 +11,7 @@ const RoomList = () => {
 
   const fetchRooms = async () => {
     try {
-      const res = await fetch(`https://room-mates-project.vercel.app/api/searchcity${city ? `?city=${encodeURIComponent(city)}` : ''}`);
+      const res = await fetch(`https://room-mates-brown.vercel.app/api/searchcity${city ? `?city=${encodeURIComponent(city)}` : ''}`);
       const data = await res.json();
       setRooms(data);
     } catch (error) {
