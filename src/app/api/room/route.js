@@ -1,7 +1,5 @@
 import { v2 as cloudinary } from "cloudinary";
-import { writeFile, mkdir, unlink } from "fs/promises";
-import { existsSync } from "fs";
-import path from "path";
+import streamifier from "streamifier";
 import jwt from "jsonwebtoken";
 import { NextResponse } from "next/server";
 import DBconnection from "@/app/utils/config/db";
@@ -18,6 +16,20 @@ export const config = {
   api: {
     bodyParser: false,
   },
+};
+
+// Helper to stream upload to Cloudinary
+const streamUpload = (buffer) => {
+  return new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      { folder: "roommates_uploads" },
+      (error, result) => {
+        if (result) resolve(result);
+        else reject(error);
+      },
+    );
+    streamifier.createReadStream(buffer).pipe(stream);
+  });
 };
 
 export async function POST(request) {
@@ -37,30 +49,17 @@ export async function POST(request) {
     let imageUrl = "";
     if (image && typeof image.name === "string") {
       const buffer = Buffer.from(await image.arrayBuffer());
-      const filename = `${Date.now()}-${image.name}`;
-
-      const tempPath = path.join(process.cwd(), "tmp");
-
-      if (!existsSync(tempPath)) {
-        await mkdir(tempPath);
-      }
-
-      const filePath = path.join(tempPath, filename);
-      await writeFile(filePath, buffer);
-
-      const uploadResult = await cloudinary.uploader.upload(filePath, {
-        folder: "roommate_uploads",
-      });
-
+      const uploadResult = await streamUpload(buffer);
       imageUrl = uploadResult.secure_url;
-
-      // Optional: Delete the temp file after upload
-      await unlink(filePath);
     }
 
     const token = request.headers.get("token");
     if (!token) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    }
+
+    if (!process.env.JWT_SECRET) {
+      throw new Error("JWT_SECRET is missing in environment variables.");
     }
 
     let userId;
@@ -110,7 +109,7 @@ export async function POST(request) {
       { status: 201 },
     );
   } catch (error) {
-    console.error("Upload error:", error);
+    console.error("Upload error:", error.message, error.stack);
     return NextResponse.json(
       { message: "Internal server error", error: error.message },
       { status: 500 },
