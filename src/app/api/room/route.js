@@ -1,10 +1,18 @@
-import { writeFile } from "fs/promises";
+import { v2 as cloudinary } from "cloudinary";
+import { writeFile, mkdir, unlink } from "fs/promises";
+import { existsSync } from "fs";
 import path from "path";
-import { NextResponse } from "next/server";
 import jwt from "jsonwebtoken";
+import { NextResponse } from "next/server";
 import DBconnection from "@/app/utils/config/db";
 import Room from "@/app/utils/models/room";
 import User from "@/app/utils/models/User";
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
 export const config = {
   api: {
@@ -16,7 +24,6 @@ export async function POST(request) {
   await DBconnection();
 
   try {
-    // Parse FormData
     const data = await request.formData();
     const name = data.get("name");
     const phone = data.get("phone");
@@ -27,19 +34,31 @@ export async function POST(request) {
     const description = data.get("description");
     const image = data.get("image");
 
-    // Save file
-    let imagePath = "";
+    let imageUrl = "";
     if (image && typeof image.name === "string") {
       const buffer = Buffer.from(await image.arrayBuffer());
       const filename = `${Date.now()}-${image.name}`;
-      imagePath = `/uploads/${filename}`;
-      const fullPath = path.join(process.cwd(), "public", "uploads", filename);
-      await writeFile(fullPath, buffer);
+
+      const tempPath = path.join(process.cwd(), "tmp");
+
+      if (!existsSync(tempPath)) {
+        await mkdir(tempPath);
+      }
+
+      const filePath = path.join(tempPath, filename);
+      await writeFile(filePath, buffer);
+
+      const uploadResult = await cloudinary.uploader.upload(filePath, {
+        folder: "roommate_uploads",
+      });
+
+      imageUrl = uploadResult.secure_url;
+
+      // Optional: Delete the temp file after upload
+      await unlink(filePath);
     }
 
-    // Decode token from header
     const token = request.headers.get("token");
-
     if (!token) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
@@ -60,11 +79,10 @@ export async function POST(request) {
     if (user.room.length >= 2) {
       return NextResponse.json(
         { message: "User can only add up to 2 rooms" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
-    // ✅ Build room object only with provided fields
     const roomData = {
       ...(name && { name }),
       ...(phone && { phone }),
@@ -73,7 +91,7 @@ export async function POST(request) {
       ...(area && { area }),
       ...(city && { city }),
       ...(description && { description }),
-      ...(imagePath && { image: imagePath }),
+      ...(imageUrl && { image: imageUrl }),
       user: user._id,
     };
 
@@ -89,13 +107,13 @@ export async function POST(request) {
         roomId: savedRoom._id,
         userRoomName: savedRoom.name,
       },
-      { status: 201 }
+      { status: 201 },
     );
   } catch (error) {
-    console.error(error);
+    console.error("Upload error:", error);
     return NextResponse.json(
       { message: "Internal server error", error: error.message },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

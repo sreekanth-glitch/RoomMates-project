@@ -15,7 +15,6 @@ const RoomForm = () => {
   });
 
   const [errors, setErrors] = useState({});
-  
 
   const handleChange = (e) => {
     const { name, value, files } = e.target;
@@ -63,7 +62,7 @@ const RoomForm = () => {
     e.preventDefault();
     const validationErrors = validate();
     setErrors(validationErrors);
-  
+
     if (Object.keys(validationErrors).length === 0) {
       try {
         const token = localStorage.getItem('token');
@@ -71,27 +70,27 @@ const RoomForm = () => {
           alert('You must be logged in to submit.');
           return;
         }
-  
+
         const formData = new FormData();
         formData.append('name', form.name);
         formData.append('phone', form.phone);
-        formData.append('total', form.totalRent);       // Changed key
-        formData.append('perHead', form.rentPerHead);   // Changed key
+        formData.append('total', form.totalRent);
+        formData.append('perHead', form.rentPerHead);
         formData.append('area', form.area);
         formData.append('city', form.city);
         formData.append('description', form.description);
         formData.append('image', form.image);
-  
+
         const res = await fetch('https://room-mates-brown.vercel.app/api/room', {
           method: 'POST',
           headers: {
-            token: token, // Corrected header
+            token: token,
           },
           body: formData,
         });
-  
+
         const data = await res.json();
-  
+
         if (res.ok) {
           alert('Room added successfully!');
           setForm({
@@ -102,13 +101,10 @@ const RoomForm = () => {
             area: '',
             city: '',
             description: '',
-            image: '',
+            image: null, // ✅ reset image to null, not empty string
           });
 
           window.location.reload();
-  
-          // Update preview manually
-        
         } else {
           alert(data.message || 'Something went wrong');
         }
@@ -118,7 +114,6 @@ const RoomForm = () => {
       }
     }
   };
-  
 
   return (
     <div className="bg-gray-100 px-10 pt-30 flex justify-center sm:p-15">
@@ -126,7 +121,6 @@ const RoomForm = () => {
         <h2 className="text-2xl font-bold mb-6 text-center text-[#1c4475]">Share room details</h2>
 
         <form className="space-y-4" onSubmit={handleSubmit}>
-          {/* Input Fields */}
           {[
             { label: 'Name *', name: 'name', placeholder: 'Enter your name' },
             { label: 'Phone *', name: 'phone', placeholder: 'Enter your phone' },
@@ -150,28 +144,18 @@ const RoomForm = () => {
             </div>
           ))}
 
-          {/* Image Input */}
-          {/* Image Input */}
-<div>
-  <label className=" block text-sm font-medium text-gray-700 mb-1">Image</label> {/* Removed * */}
-  <input
-    type="file"
-    name="image"
-    accept="image/*"
-    onChange={handleChange}
-    className="w-full text-sm text-gray-700
-               file:mr-4 file:py-2 file:px-4
-               file:rounded-md file:border-0
-               file:text-sm file:font-semibold
-               file:bg-orange-100 file:text-orange-700
-               hover:file:bg-orange-200
-               border rounded-md focus:outline-none focus:ring-2 focus:ring-orange-400"
-  />
-  {errors.image && <p className="text-red-500 text-sm mt-1">{errors.image}</p>}
-</div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Image</label>
+            <input
+              type="file"
+              name="image"
+              accept="image/*"
+              onChange={handleChange}
+              className="w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-orange-100 file:text-orange-700 hover:file:bg-orange-200 border rounded-md focus:outline-none focus:ring-2 focus:ring-orange-400"
+            />
+            {errors.image && <p className="text-red-500 text-sm mt-1">{errors.image}</p>}
+          </div>
 
-
-          {/* Submit Button */}
           <button
             type="submit"
             className="w-full py-2.5 cursor-pointer bg-[#1c4475] text-orange-400 font-semibold rounded-md hover:bg-[#0f2947] transition duration-300 active:scale-95"

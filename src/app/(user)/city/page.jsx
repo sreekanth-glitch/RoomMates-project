@@ -4,7 +4,7 @@ import { Suspense } from "react";
 const City = () => {
   return (
     <div>
-      <Suspense fallback={<p className="text-center mt-5">Loading rooms...</p>}>
+      <Suspense fallback={<p className="text-center mt-5"></p>}>
         <RoomList />
       </Suspense>
     </div>

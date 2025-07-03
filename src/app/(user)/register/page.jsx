@@ -4,7 +4,7 @@ import RegisterForm from "@/components/RegisterForm";
 const Register = () => {
   return (
     <div>
-      <Suspense fallback={<p className="text-center mt-5">Loading registration form...</p>}>
+      <Suspense fallback={<p className="text-center mt-5"></p>}>
         <RegisterForm />
       </Suspense>
     </div>

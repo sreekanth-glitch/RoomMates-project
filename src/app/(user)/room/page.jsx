@@ -7,7 +7,7 @@ const Room = () => {
     <div className="flex flex-col md:flex-row h-screen">
       {/* Left Side */}
       <div className="w-full md:w-1/2">
-        <Suspense fallback={<p className="text-center mt-5">Loading form...</p>}>
+        <Suspense fallback={<p className="text-center mt-5"></p>}>
           <RoomForm />
         </Suspense>
       </div>

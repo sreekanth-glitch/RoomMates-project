@@ -4,7 +4,7 @@ import Login from "@/components/Login";
 const page = () => {
   return (
     <div>
-      <Suspense fallback={<p className="text-center mt-5">Loading login...</p>}>
+      <Suspense fallback={<p className="text-center mt-5"></p>}>
         <Login />
       </Suspense>
     </div>

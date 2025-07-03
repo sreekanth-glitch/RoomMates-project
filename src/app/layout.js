@@ -20,14 +20,14 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body>
-        <Suspense fallback={<div>Loading Navbar...</div>}>
+        <Suspense fallback={<div></div>}>
           <NavBar />
         </Suspense>
 
         {/* Children usually won't need suspense here unless they use useSearchParams() at top level */}
         {children}
 
-        <Suspense fallback={<div>Loading Footer...</div>}>
+        <Suspense fallback={<div></div>}>
           <Footer />
         </Suspense>
       </body>
