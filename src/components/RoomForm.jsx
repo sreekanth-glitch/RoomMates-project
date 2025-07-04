@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 
 const RoomForm = () => {
   const router = useRouter();
-  const [loading, setLoading] = useState(false);
 
   const [form, setForm] = useState({
     name: '',
@@ -19,13 +18,13 @@ const RoomForm = () => {
   });
 
   const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
     const { name, value, files } = e.target;
 
     if (name === 'image') {
       const selectedImage = files[0];
-
       if (
         selectedImage &&
         (selectedImage.size > 1024 * 1024 || !selectedImage.type.startsWith('image/'))
@@ -72,14 +71,14 @@ const RoomForm = () => {
     setErrors(validationErrors);
 
     if (Object.keys(validationErrors).length === 0) {
-      setLoading(true);
       try {
         const token = localStorage.getItem('token');
         if (!token) {
           alert('You must be logged in to submit.');
-          setLoading(false);
           return;
         }
+
+        setLoading(true);
 
         const formData = new FormData();
         formData.append('name', form.name);
@@ -89,11 +88,12 @@ const RoomForm = () => {
         formData.append('area', form.area);
         formData.append('city', form.city);
         formData.append('description', form.description);
+
         if (form.image) {
           formData.append('image', form.image);
         }
 
-        const res = await fetch('https://room-mates-brown.vercel.app/api/room', {
+        const res = await fetch('/api/room', {
           method: 'POST',
           headers: {
             token: token,
@@ -115,7 +115,8 @@ const RoomForm = () => {
             description: '',
             image: null,
           });
-          router.refresh(); // avoid full page reload
+          setErrors({});
+          router.refresh(); // or router.push('/dashboard') if redirecting
         } else {
           alert(data.message || 'Something went wrong');
         }
@@ -131,23 +132,21 @@ const RoomForm = () => {
   return (
     <div className="bg-gray-100 px-10 pt-30 flex justify-center sm:p-15">
       <div className="w-full max-w-md bg-white rounded-xl shadow-md p-6">
-        <h2 className="text-2xl font-bold mb-6 text-center text-[#1c4475]">
-          Share room details
-        </h2>
+        <h2 className="text-2xl font-bold mb-6 text-center text-[#1c4475]">Share room details</h2>
 
         <form className="space-y-4" onSubmit={handleSubmit}>
           {[
             { label: 'Name *', name: 'name', placeholder: 'Enter your name' },
-            { label: 'Phone *', name: 'phone', placeholder: 'Enter your phone', type: 'tel' },
+            { label: 'Phone *', name: 'phone', placeholder: 'Enter your phone' },
             { label: 'Total Rent', name: 'totalRent', placeholder: 'Total rent' },
             { label: 'Rent Per Head', name: 'rentPerHead', placeholder: 'Rent per head' },
             { label: 'Area', name: 'area', placeholder: 'Enter area' },
             { label: 'City *', name: 'city', placeholder: 'Enter city' },
-          ].map(({ label, name, placeholder, type = 'text' }) => (
+          ].map(({ label, name, placeholder }) => (
             <div key={name}>
               <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
               <input
-                type={type}
+                type={name === 'phone' ? 'tel' : 'text'}
                 name={name}
                 value={form[name]}
                 onChange={handleChange}
@@ -166,10 +165,9 @@ const RoomForm = () => {
               onChange={handleChange}
               placeholder="Optional"
               className="w-full p-2.5 border rounded-md focus:outline-none focus:ring-2 focus:ring-orange-400"
+              rows={3}
             />
-            {errors.description && (
-              <p className="text-red-500 text-sm">{errors.description}</p>
-            )}
+            {errors.description && <p className="text-red-500 text-sm">{errors.description}</p>}
           </div>
 
           <div>
@@ -187,7 +185,7 @@ const RoomForm = () => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-2.5 cursor-pointer bg-[#1c4475] text-orange-400 font-semibold rounded-md hover:bg-[#0f2947] transition duration-300 active:scale-95 disabled:opacity-60"
+            className="w-full py-2.5 cursor-pointer bg-[#1c4475] text-orange-400 font-semibold rounded-md hover:bg-[#0f2947] transition duration-300 active:scale-95 disabled:opacity-50"
           >
             {loading ? 'Submitting...' : 'Submit'}
           </button>

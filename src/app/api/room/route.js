@@ -1,11 +1,15 @@
-import jwt from "jsonwebtoken";
+import { v2 as cloudinary } from "cloudinary";
 import { NextResponse } from "next/server";
+import jwt from "jsonwebtoken";
 import DBconnection from "@/app/utils/config/db";
 import Room from "@/app/utils/models/room";
 import User from "@/app/utils/models/User";
-import { writeFile } from "fs/promises";
-import path from "path";
-import fs from "fs";
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
 export async function POST(request) {
   try {
@@ -27,7 +31,7 @@ export async function POST(request) {
     }
 
     if (!process.env.JWT_SECRET) {
-      throw new Error("JWT_SECRET is missing in environment variables.");
+      throw new Error("JWT_SECRET is missing");
     }
 
     let userId;
@@ -45,28 +49,30 @@ export async function POST(request) {
 
     if (user.room.length >= 2) {
       return NextResponse.json(
-        { message: "User can only add up to 2 rooms" },
+        { message: "Max 2 rooms allowed" },
         { status: 400 },
       );
     }
 
-    // Save image to public/uploads
+    // Upload image to Cloudinary
     let imageUrl = "";
     if (image && image.name) {
-      const buffer = Buffer.from(await image.arrayBuffer());
-      const uploadsDir = path.join(process.cwd(), "public", "uploads");
+      const arrayBuffer = await image.arrayBuffer();
+      const buffer = Buffer.from(arrayBuffer);
 
-      if (!fs.existsSync(uploadsDir)) {
-        fs.mkdirSync(uploadsDir, { recursive: true });
-      }
+      const uploaded = await new Promise((resolve, reject) => {
+        cloudinary.uploader
+          .upload_stream({ folder: "roommates_uploads" }, (err, result) => {
+            if (err) return reject(err);
+            resolve(result);
+          })
+          .end(buffer);
+      });
 
-      const filePath = path.join(uploadsDir, image.name);
-      await writeFile(filePath, buffer);
-
-      imageUrl = `/uploads/${image.name}`; // relative path for frontend access
+      imageUrl = uploaded.secure_url;
     }
 
-    const roomData = {
+    const room = new Room({
       name,
       phone,
       total,
@@ -76,26 +82,20 @@ export async function POST(request) {
       description,
       image: imageUrl,
       user: user._id,
-    };
+    });
 
-    const room = new Room(roomData);
     const savedRoom = await room.save();
-
     user.room.push(savedRoom._id);
     await user.save();
 
     return NextResponse.json(
-      {
-        message: "Room added successfully",
-        roomId: savedRoom._id,
-        userRoomName: savedRoom.name,
-      },
+      { message: "Room added successfully", roomId: savedRoom._id },
       { status: 201 },
     );
   } catch (error) {
-    console.error("Upload error:", error.message, error.stack);
+    console.error("Upload error:", error);
     return NextResponse.json(
-      { message: "Internal server error", error: error.message },
+      { message: "Internal server error" },
       { status: 500 },
     );
   }
