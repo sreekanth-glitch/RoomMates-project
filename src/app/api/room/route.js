@@ -1,41 +1,16 @@
-import { v2 as cloudinary } from "cloudinary";
-import streamifier from "streamifier";
 import jwt from "jsonwebtoken";
 import { NextResponse } from "next/server";
 import DBconnection from "@/app/utils/config/db";
 import Room from "@/app/utils/models/room";
 import User from "@/app/utils/models/User";
-
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-});
-
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};
-
-// Helper to stream upload to Cloudinary
-const streamUpload = (buffer) => {
-  return new Promise((resolve, reject) => {
-    const stream = cloudinary.uploader.upload_stream(
-      { folder: "roommates_uploads" },
-      (error, result) => {
-        if (result) resolve(result);
-        else reject(error);
-      },
-    );
-    streamifier.createReadStream(buffer).pipe(stream);
-  });
-};
+import { writeFile } from "fs/promises";
+import path from "path";
+import fs from "fs";
 
 export async function POST(request) {
-  await DBconnection();
-
   try {
+    await DBconnection();
+
     const data = await request.formData();
     const name = data.get("name");
     const phone = data.get("phone");
@@ -45,13 +20,6 @@ export async function POST(request) {
     const city = data.get("city");
     const description = data.get("description");
     const image = data.get("image");
-
-    let imageUrl = "";
-    if (image && typeof image.name === "string") {
-      const buffer = Buffer.from(await image.arrayBuffer());
-      const uploadResult = await streamUpload(buffer);
-      imageUrl = uploadResult.secure_url;
-    }
 
     const token = request.headers.get("token");
     if (!token) {
@@ -82,15 +50,31 @@ export async function POST(request) {
       );
     }
 
+    // Save image to public/uploads
+    let imageUrl = "";
+    if (image && image.name) {
+      const buffer = Buffer.from(await image.arrayBuffer());
+      const uploadsDir = path.join(process.cwd(), "public", "uploads");
+
+      if (!fs.existsSync(uploadsDir)) {
+        fs.mkdirSync(uploadsDir, { recursive: true });
+      }
+
+      const filePath = path.join(uploadsDir, image.name);
+      await writeFile(filePath, buffer);
+
+      imageUrl = `/uploads/${image.name}`; // relative path for frontend access
+    }
+
     const roomData = {
-      ...(name && { name }),
-      ...(phone && { phone }),
-      ...(total && { total }),
-      ...(perHead && { perHead }),
-      ...(area && { area }),
-      ...(city && { city }),
-      ...(description && { description }),
-      ...(imageUrl && { image: imageUrl }),
+      name,
+      phone,
+      total,
+      perHead,
+      area,
+      city,
+      description,
+      image: imageUrl,
       user: user._id,
     };
 

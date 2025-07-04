@@ -1,8 +1,12 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 const RoomForm = () => {
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+
   const [form, setForm] = useState({
     name: '',
     phone: '',
@@ -21,8 +25,12 @@ const RoomForm = () => {
 
     if (name === 'image') {
       const selectedImage = files[0];
-      if (selectedImage && selectedImage.size > 1024 * 1024) {
-        setErrors((prev) => ({ ...prev, image: 'Image size should be less than 1MB' }));
+
+      if (
+        selectedImage &&
+        (selectedImage.size > 1024 * 1024 || !selectedImage.type.startsWith('image/'))
+      ) {
+        setErrors((prev) => ({ ...prev, image: 'Only images under 1MB are allowed' }));
         setForm((prev) => ({ ...prev, image: null }));
       } else {
         setErrors((prev) => ({ ...prev, image: '' }));
@@ -64,10 +72,12 @@ const RoomForm = () => {
     setErrors(validationErrors);
 
     if (Object.keys(validationErrors).length === 0) {
+      setLoading(true);
       try {
         const token = localStorage.getItem('token');
         if (!token) {
           alert('You must be logged in to submit.');
+          setLoading(false);
           return;
         }
 
@@ -79,7 +89,9 @@ const RoomForm = () => {
         formData.append('area', form.area);
         formData.append('city', form.city);
         formData.append('description', form.description);
-        formData.append('image', form.image);
+        if (form.image) {
+          formData.append('image', form.image);
+        }
 
         const res = await fetch('https://room-mates-brown.vercel.app/api/room', {
           method: 'POST',
@@ -101,16 +113,17 @@ const RoomForm = () => {
             area: '',
             city: '',
             description: '',
-            image: null, // ✅ reset image to null, not empty string
+            image: null,
           });
-
-          window.location.reload();
+          router.refresh(); // avoid full page reload
         } else {
           alert(data.message || 'Something went wrong');
         }
       } catch (error) {
         console.error('Upload error:', error);
         alert('Server error. Please try again.');
+      } finally {
+        setLoading(false);
       }
     }
   };
@@ -118,22 +131,23 @@ const RoomForm = () => {
   return (
     <div className="bg-gray-100 px-10 pt-30 flex justify-center sm:p-15">
       <div className="w-full max-w-md bg-white rounded-xl shadow-md p-6">
-        <h2 className="text-2xl font-bold mb-6 text-center text-[#1c4475]">Share room details</h2>
+        <h2 className="text-2xl font-bold mb-6 text-center text-[#1c4475]">
+          Share room details
+        </h2>
 
         <form className="space-y-4" onSubmit={handleSubmit}>
           {[
             { label: 'Name *', name: 'name', placeholder: 'Enter your name' },
-            { label: 'Phone *', name: 'phone', placeholder: 'Enter your phone' },
+            { label: 'Phone *', name: 'phone', placeholder: 'Enter your phone', type: 'tel' },
             { label: 'Total Rent', name: 'totalRent', placeholder: 'Total rent' },
             { label: 'Rent Per Head', name: 'rentPerHead', placeholder: 'Rent per head' },
             { label: 'Area', name: 'area', placeholder: 'Enter area' },
             { label: 'City *', name: 'city', placeholder: 'Enter city' },
-            { label: 'Description', name: 'description', placeholder: 'Optional' },
-          ].map(({ label, name, placeholder }) => (
+          ].map(({ label, name, placeholder, type = 'text' }) => (
             <div key={name}>
               <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
               <input
-                type="text"
+                type={type}
                 name={name}
                 value={form[name]}
                 onChange={handleChange}
@@ -143,6 +157,20 @@ const RoomForm = () => {
               {errors[name] && <p className="text-red-500 text-sm">{errors[name]}</p>}
             </div>
           ))}
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+            <textarea
+              name="description"
+              value={form.description}
+              onChange={handleChange}
+              placeholder="Optional"
+              className="w-full p-2.5 border rounded-md focus:outline-none focus:ring-2 focus:ring-orange-400"
+            />
+            {errors.description && (
+              <p className="text-red-500 text-sm">{errors.description}</p>
+            )}
+          </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Image</label>
@@ -158,9 +186,10 @@ const RoomForm = () => {
 
           <button
             type="submit"
-            className="w-full py-2.5 cursor-pointer bg-[#1c4475] text-orange-400 font-semibold rounded-md hover:bg-[#0f2947] transition duration-300 active:scale-95"
+            disabled={loading}
+            className="w-full py-2.5 cursor-pointer bg-[#1c4475] text-orange-400 font-semibold rounded-md hover:bg-[#0f2947] transition duration-300 active:scale-95 disabled:opacity-60"
           >
-            Submit
+            {loading ? 'Submitting...' : 'Submit'}
           </button>
         </form>
       </div>
